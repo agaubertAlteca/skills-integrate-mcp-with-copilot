@@ -1,50 +1,44 @@
 # Mergington High School Activities API
 
-A super simple FastAPI application that allows students to view and sign up for extracurricular activities.
+FastAPI application for viewing extracurricular activities, registering students,
+and recording attendance for individual sessions. SQLite stores activities,
+student profiles, registrations, sessions, and attendance between server restarts.
 
-## Features
+## Run the application
 
-- View all available extracurricular activities
-- Sign up for activities
+From the repository root, install dependencies and start the server:
 
-## Getting Started
+```sh
+pip install -r requirements.txt
+uvicorn src.app:app --reload
+```
 
-1. Install the dependencies:
+The SQLite database is created at `src/activities.sqlite3` by default. Set
+`ACTIVITY_DATABASE_PATH` to use a different database file.
 
-   ```
-   pip install fastapi uvicorn
-   ```
+## API
 
-2. Run the application:
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/activities` | List activities, participant emails, and capacity |
+| `PUT` | `/students` | Create or update a student profile (`email`, `name`, `grade_level`) |
+| `GET` | `/students` | List student profiles |
+| `POST` | `/activities/{activity_name}/signup?email=student@example.edu` | Register an existing student profile |
+| `DELETE` | `/activities/{activity_name}/unregister?email=student@example.edu` | Remove a registration and release its spot |
+| `POST` | `/activities/{activity_name}/sessions` | Create a session with JSON `{"session_date":"2026-10-21"}` |
+| `GET` | `/activities/{activity_name}/sessions` | List sessions and registered students' attendance |
+| `PUT` | `/sessions/{session_id}/attendance` | Record attendance with JSON `{"student_email":"student@example.edu","status":"present"}` |
+| `GET` | `/activities/{activity_name}/attendance` | Review attendance records for an activity |
+| `GET` | `/students/{student_email}/attendance` | Review attendance records for a student |
 
-   ```
-   python app.py
-   ```
+Registration is serialized in a SQLite write transaction, so simultaneous
+requests cannot exceed an activity's capacity. A student profile must exist
+before the student can register.
 
-3. Open your browser and go to:
-   - API documentation: http://localhost:8000/docs
-   - Alternative documentation: http://localhost:8000/redoc
+## Tests
 
-## API Endpoints
+Run the API tests from the repository root:
 
-| Method | Endpoint                                                          | Description                                                         |
-| ------ | ----------------------------------------------------------------- | ------------------------------------------------------------------- |
-| GET    | `/activities`                                                     | Get all activities with their details and current participant count |
-| POST   | `/activities/{activity_name}/signup?email=student@mergington.edu` | Sign up for an activity                                             |
-
-## Data Model
-
-The application uses a simple data model with meaningful identifiers:
-
-1. **Activities** - Uses activity name as identifier:
-
-   - Description
-   - Schedule
-   - Maximum number of participants allowed
-   - List of student emails who are signed up
-
-2. **Students** - Uses email as identifier:
-   - Name
-   - Grade level
-
-All data is stored in memory, which means data will be reset when the server restarts.
+```sh
+python -m unittest discover -s src -p 'test_*.py'
+```
